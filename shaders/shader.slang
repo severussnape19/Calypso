@@ -17,6 +17,8 @@ struct VSOutput {
     float2 frag_uv;
 };
 
+Sampler2D texture;
+
 // This function is invoked for every vertex
 // SV_VertexID -> parameter that contains the index of the current vertex.
 // This usually an index into the vertex buffer
@@ -32,7 +34,7 @@ VSOutput vertMain(VSInput input) {
 [shader("fragment")]
 float4 fragMain(VSOutput inVert) : SV_Target {
     float3 color = inVert.frag_color;
-    return float4(inVert.frag_uv, 0.0, 1.0); // red triangle
+    return float4(inVert.frag_color * texture.Sample(inVert.frag_uv).rgb, 1.0);
 }
 
 /*
