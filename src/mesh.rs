@@ -5,9 +5,9 @@ use glm::{ Vec2, Vec3 };
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Vertex {
-    pub pos:   Vec2,
+    pub pos:   Vec3,
     pub color: Vec3,
-    pub uv: Vec2,
+    pub uv:    Vec2, // texture co-ordinates
 }
 
 impl Vertex {
@@ -23,7 +23,7 @@ impl Vertex {
         let description_1 = ash::vk::VertexInputAttributeDescription::default()
             .location(0u32)
             .binding(0u32)
-            .format(ash::vk::Format::R32G32_SFLOAT)
+            .format(ash::vk::Format::R32G32B32_SFLOAT)
             .offset(std::mem::offset_of!(Vertex, pos) as u32);
 
         let description_2 = ash::vk::VertexInputAttributeDescription::default()
@@ -51,14 +51,24 @@ impl Mesh {
     pub fn data() -> Self {
         Self {
             vertices: vec![
-            Vertex { pos: Vec2::new(-0.5, -0.5), color: Vec3::new(1.0, 0.0, 0.0), uv: Vec2::new(1.0, 0.0)},
-            Vertex { pos: Vec2::new( 0.5, -0.5), color: Vec3::new(1.0, 1.0, 0.0), uv: Vec2::new(0.0, 0.0)},
-            Vertex { pos: Vec2::new( 0.5,  0.5), color: Vec3::new(0.0, 0.0, 1.0), uv: Vec2::new(0.0, 1.0)},
-            Vertex { pos: Vec2::new(-0.5,  0.5), color: Vec3::new(1.0, 1.0, 1.0), uv: Vec2::new(1.0, 1.0)},
-        ],
-            indices: vec![
+            Vertex { pos: Vec3::new(-0.5, -0.5, 0.0), color: Vec3::new(1.0, 0.0, 0.0), uv: Vec2::new(1.0, 0.0)},
+            Vertex { pos: Vec3::new( 0.5, -0.5, 0.0), color: Vec3::new(1.0, 1.0, 0.0), uv: Vec2::new(0.0, 0.0)},
+            Vertex { pos: Vec3::new( 0.5,  0.5, 0.0), color: Vec3::new(0.0, 0.0, 1.0), uv: Vec2::new(0.0, 1.0)},
+            Vertex { pos: Vec3::new(-0.5,  0.5, 0.0), color: Vec3::new(1.0, 1.0, 1.0), uv: Vec2::new(1.0, 1.0)},
+
+            Vertex { pos: Vec3::new(-0.5, -0.5, -0.5), color: Vec3::new(1.0, 0.0, 0.0), uv: Vec2::new(1.0, 0.0)},
+            Vertex { pos: Vec3::new( 0.5, -0.5, -0.5), color: Vec3::new(1.0, 1.0, 0.0), uv: Vec2::new(0.0, 0.0)},
+            Vertex { pos: Vec3::new( 0.5,  0.5, -0.5), color: Vec3::new(0.0, 0.0, 1.0), uv: Vec2::new(0.0, 1.0)},
+            Vertex { pos: Vec3::new(-0.5,  0.5, -0.5), color: Vec3::new(1.0, 1.0, 1.0), uv: Vec2::new(1.0, 1.0)},
+
+            ],
+            /* indices: vec![
             0, 2, 1,
-            2, 0, 3
-        ]}
+            2, 0, 3 */
+            indices: vec![
+                0, 1, 2, 2, 3, 0,
+                4, 5, 6, 6, 7, 4
+            ],
+        }
     }
 }

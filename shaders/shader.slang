@@ -1,5 +1,5 @@
 struct VSInput {
-    [[vk::location(0)]] float2 inPosition;
+    [[vk::location(0)]] float3 inPosition;
     [[vk::location(1)]] float3 inColor;
     [[vk::location(2)]] float2 inUV;
 };
@@ -19,13 +19,10 @@ struct VSOutput {
 
 Sampler2D texture;
 
-// This function is invoked for every vertex
-// SV_VertexID -> parameter that contains the index of the current vertex.
-// This usually an index into the vertex buffer
 [shader("vertex")]
 VSOutput vertMain(VSInput input) {
     VSOutput output;
-    output.pos = mul(ubo.proj, mul(ubo.view, mul(ubo.model, float4(input.inPosition, 0.0, 1.0))));
+    output.pos = mul(ubo.proj, mul(ubo.view, mul(ubo.model, float4(input.inPosition, 1.0))));
     output.frag_color = input.inColor;
     output.frag_uv = input.inUV;
     return output;
@@ -34,9 +31,5 @@ VSOutput vertMain(VSInput input) {
 [shader("fragment")]
 float4 fragMain(VSOutput inVert) : SV_Target {
     float3 color = inVert.frag_color;
-    return float4(inVert.frag_color * texture.Sample(inVert.frag_uv).rgb, 1.0);
+    return float4(texture.Sample(inVert.frag_uv).rgb, 1.0);
 }
-
-/*
- * inPosition and inColor are vertex attributes. These are properties that are specified per vertex in the vertex buffer
-*/
