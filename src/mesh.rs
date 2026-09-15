@@ -5,9 +5,10 @@ use glm::{ Vec2, Vec3 };
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Vertex {
-    pub pos:   Vec3,
-    pub color: Vec3,
-    pub uv:    Vec2, // texture co-ordinates
+    pub pos:    Vec3,
+    pub color:  Vec3,
+    pub uv:     Vec2, // texture co-ordinates
+    pub normal: Vec3
 }
 
 impl Vertex {
@@ -19,26 +20,32 @@ impl Vertex {
         }
     }
 
-    pub fn get_attribute_descriptions() -> [ash::vk::VertexInputAttributeDescription; 3] {
-        let description_1 = ash::vk::VertexInputAttributeDescription::default()
+    pub fn get_attribute_descriptions() -> [ash::vk::VertexInputAttributeDescription; 4] {
+        let position_description = ash::vk::VertexInputAttributeDescription::default()
             .location(0u32)
             .binding(0u32)
             .format(ash::vk::Format::R32G32B32_SFLOAT)
             .offset(std::mem::offset_of!(Vertex, pos) as u32);
 
-        let description_2 = ash::vk::VertexInputAttributeDescription::default()
+        let color_description = ash::vk::VertexInputAttributeDescription::default()
             .location(1u32)
             .binding(0u32)
             .format(ash::vk::Format::R32G32B32_SFLOAT)
             .offset(std::mem::offset_of!(Vertex, color) as u32);
 
-        let description_3 = ash::vk::VertexInputAttributeDescription::default()
+        let uv_description = ash::vk::VertexInputAttributeDescription::default()
             .location(2_u32)
             .binding(0_u32)
             .format(ash::vk::Format::R32G32_SFLOAT)
             .offset(std::mem::offset_of!(Vertex, uv) as u32);
 
-        [description_1, description_2, description_3]
+        let normal_description = ash::vk::VertexInputAttributeDescription::default()
+            .location(3_u32)
+            .binding(0_u32)
+            .format(ash::vk::Format::R32G32B32_SFLOAT)
+            .offset(std::mem::offset_of!(Vertex, normal) as u32);
+
+        [position_description, color_description, uv_description, normal_description]
     }
 }
 
