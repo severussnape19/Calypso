@@ -36,5 +36,6 @@ VSOutput vertMain(VSInput input) {
 float4 fragMain(VSOutput inVert) : SV_Target {
     float3 n = normalize(inVert.frag_normal);
     float3 color = n * 0.5 + 0.5;
-    return float4(color, 1.0);
+    float4 texSample = texture.Sample(inVert.frag_uv);
+    return float4(lerp(texSample.rgb, color, 0.3), 1.0);
 }

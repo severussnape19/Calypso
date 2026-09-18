@@ -55,27 +55,53 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn data() -> Self {
-        Self {
-            vertices: vec![
-            Vertex { pos: Vec3::new(-0.5, -0.5, 0.0), color: Vec3::new(1.0, 0.0, 0.0), uv: Vec2::new(1.0, 0.0), normal: Vec3::new(0.0, 0.0, 1.0)},
-            Vertex { pos: Vec3::new( 0.5, -0.5, 0.0), color: Vec3::new(1.0, 1.0, 0.0), uv: Vec2::new(0.0, 0.0), normal: Vec3::new(0.0, 0.0, 1.0)},
-            Vertex { pos: Vec3::new( 0.5,  0.5, 0.0), color: Vec3::new(0.0, 0.0, 1.0), uv: Vec2::new(0.0, 1.0), normal: Vec3::new(0.0, 0.0, 1.0)},
-            Vertex { pos: Vec3::new(-0.5,  0.5, 0.0), color: Vec3::new(1.0, 1.0, 1.0), uv: Vec2::new(1.0, 1.0), normal: Vec3::new(0.0, 0.0, 1.0)},
+   pub fn data() -> Self {
+    Self {
+        vertices: vec![
+            // Front face (+Z) - Normal: (0.0, 0.0, 1.0)
+            Vertex { pos: Vec3::new(-0.5, -0.5,  0.5), color: Vec3::new(1.0, 0.0, 0.0), uv: Vec2::new(0.0, 0.0), normal: Vec3::new(0.0, 0.0, 1.0) },
+            Vertex { pos: Vec3::new( 0.5, -0.5,  0.5), color: Vec3::new(0.0, 1.0, 0.0), uv: Vec2::new(1.0, 0.0), normal: Vec3::new(0.0, 0.0, 1.0) },
+            Vertex { pos: Vec3::new( 0.5,  0.5,  0.5), color: Vec3::new(0.0, 0.0, 1.0), uv: Vec2::new(1.0, 1.0), normal: Vec3::new(0.0, 0.0, 1.0) },
+            Vertex { pos: Vec3::new(-0.5,  0.5,  0.5), color: Vec3::new(1.0, 1.0, 0.0), uv: Vec2::new(0.0, 1.0), normal: Vec3::new(0.0, 0.0, 1.0) },
 
-            Vertex { pos: Vec3::new(-0.5, -0.5, -0.5), color: Vec3::new(1.0, 0.0, 0.0), uv: Vec2::new(1.0, 0.0), normal: Vec3::new(0.0, 0.0, 1.0)},
-            Vertex { pos: Vec3::new( 0.5, -0.5, -0.5), color: Vec3::new(1.0, 1.0, 0.0), uv: Vec2::new(0.0, 0.0), normal: Vec3::new(0.0, 0.0, 1.0)},
-            Vertex { pos: Vec3::new( 0.5,  0.5, -0.5), color: Vec3::new(0.0, 0.0, 1.0), uv: Vec2::new(0.0, 1.0), normal: Vec3::new(0.0, 0.0, 1.0)},
-            Vertex { pos: Vec3::new(-0.5,  0.5, -0.5), color: Vec3::new(1.0, 1.0, 1.0), uv: Vec2::new(1.0, 1.0), normal: Vec3::new(0.0, 0.0, 1.0)},
+            // Back face (-Z) - Normal: (0.0, 0.0, -1.0)
+            Vertex { pos: Vec3::new(-0.5, -0.5, -0.5), color: Vec3::new(1.0, 0.0, 1.0), uv: Vec2::new(1.0, 0.0), normal: Vec3::new(0.0, 0.0, -1.0) },
+            Vertex { pos: Vec3::new( 0.5, -0.5, -0.5), color: Vec3::new(0.0, 1.0, 1.0), uv: Vec2::new(0.0, 0.0), normal: Vec3::new(0.0, 0.0, -1.0) },
+            Vertex { pos: Vec3::new( 0.5,  0.5, -0.5), color: Vec3::new(1.0, 1.0, 1.0), uv: Vec2::new(0.0, 1.0), normal: Vec3::new(0.0, 0.0, -1.0) },
+            Vertex { pos: Vec3::new(-0.5,  0.5, -0.5), color: Vec3::new(0.2, 0.2, 0.2), uv: Vec2::new(1.0, 1.0), normal: Vec3::new(0.0, 0.0, -1.0) },
 
-            ],
-            /* indices: vec![
-            0, 2, 1,
-            2, 0, 3 */
-            indices: vec![
-                0, 1, 2, 2, 3, 0,
-                4, 5, 6, 6, 7, 4
-            ],
-        }
+            // Right face (+X) - Normal: (1.0, 0.0, 0.0)
+            Vertex { pos: Vec3::new( 0.5, -0.5,  0.5), color: Vec3::new(0.0, 1.0, 0.0), uv: Vec2::new(0.0, 0.0), normal: Vec3::new(1.0, 0.0, 0.0) },
+            Vertex { pos: Vec3::new( 0.5, -0.5, -0.5), color: Vec3::new(0.0, 1.0, 1.0), uv: Vec2::new(1.0, 0.0), normal: Vec3::new(1.0, 0.0, 0.0) },
+            Vertex { pos: Vec3::new( 0.5,  0.5, -0.5), color: Vec3::new(1.0, 1.0, 1.0), uv: Vec2::new(1.0, 1.0), normal: Vec3::new(1.0, 0.0, 0.0) },
+            Vertex { pos: Vec3::new( 0.5,  0.5,  0.5), color: Vec3::new(0.0, 0.0, 1.0), uv: Vec2::new(0.0, 1.0), normal: Vec3::new(1.0, 0.0, 0.0) },
+
+            // Left face (-X) - Normal: (-1.0, 0.0, 0.0)
+            Vertex { pos: Vec3::new(-0.5, -0.5, -0.5), color: Vec3::new(1.0, 0.0, 1.0), uv: Vec2::new(0.0, 0.0), normal: Vec3::new(-1.0, 0.0, 0.0) },
+            Vertex { pos: Vec3::new(-0.5, -0.5,  0.5), color: Vec3::new(1.0, 0.0, 0.0), uv: Vec2::new(1.0, 0.0), normal: Vec3::new(-1.0, 0.0, 0.0) },
+            Vertex { pos: Vec3::new(-0.5,  0.5,  0.5), color: Vec3::new(1.0, 1.0, 0.0), uv: Vec2::new(1.0, 1.0), normal: Vec3::new(-1.0, 0.0, 0.0) },
+            Vertex { pos: Vec3::new(-0.5,  0.5, -0.5), color: Vec3::new(0.2, 0.2, 0.2), uv: Vec2::new(0.0, 1.0), normal: Vec3::new(-1.0, 0.0, 0.0) },
+
+            // Top face (+Y) - Normal: (0.0, 1.0, 0.0)
+            Vertex { pos: Vec3::new(-0.5,  0.5,  0.5), color: Vec3::new(1.0, 1.0, 0.0), uv: Vec2::new(0.0, 0.0), normal: Vec3::new(0.0, 1.0, 0.0) },
+            Vertex { pos: Vec3::new( 0.5,  0.5,  0.5), color: Vec3::new(0.0, 0.0, 1.0), uv: Vec2::new(1.0, 0.0), normal: Vec3::new(0.0, 1.0, 0.0) },
+            Vertex { pos: Vec3::new( 0.5,  0.5, -0.5), color: Vec3::new(1.0, 1.0, 1.0), uv: Vec2::new(1.0, 1.0), normal: Vec3::new(0.0, 1.0, 0.0) },
+            Vertex { pos: Vec3::new(-0.5,  0.5, -0.5), color: Vec3::new(0.2, 0.2, 0.2), uv: Vec2::new(0.0, 1.0), normal: Vec3::new(0.0, 1.0, 0.0) },
+
+            // Bottom face (-Y) - Normal: (0.0, -1.0, 0.0)
+            Vertex { pos: Vec3::new(-0.5, -0.5, -0.5), color: Vec3::new(1.0, 0.0, 1.0), uv: Vec2::new(0.0, 0.0), normal: Vec3::new(0.0, -1.0, 0.0) },
+            Vertex { pos: Vec3::new( 0.5, -0.5, -0.5), color: Vec3::new(0.0, 1.0, 1.0), uv: Vec2::new(1.0, 0.0), normal: Vec3::new(0.0, -1.0, 0.0) },
+            Vertex { pos: Vec3::new( 0.5, -0.5,  0.5), color: Vec3::new(0.0, 1.0, 0.0), uv: Vec2::new(1.0, 1.0), normal: Vec3::new(0.0, -1.0, 0.0) },
+            Vertex { pos: Vec3::new(-0.5, -0.5,  0.5), color: Vec3::new(1.0, 0.0, 0.0), uv: Vec2::new(0.0, 1.0), normal: Vec3::new(0.0, -1.0, 0.0) },
+        ],
+        indices: vec![
+            0,  1,  2,   2,  3,  0, // +Z face
+            5,  4,  7,   7,  6,  5, // -Z face
+            8,  9, 10,  10, 11,  8, // +X face
+           12, 13, 14,  14, 15, 12, // -X face
+           16, 17, 18,  18, 19, 16, // +Y face
+           20, 21, 22,  22, 23, 20, // -Y face
+        ],
     }
+}
 }

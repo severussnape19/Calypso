@@ -27,7 +27,7 @@ impl FrameRenderer {
         let descriptor_pool = Descriptor::create_descriptor_pool(ctx, MAX_FRAMES_IN_FLIGHT)?;
         let mesh: Mesh = Mesh::data();
 
-        let ibo: DeviceBuffer = DeviceBuffer::create_vertex_buffer(
+        let ibo: DeviceBuffer = DeviceBuffer::create_index_buffer(
             ctx,
             ash::vk::BufferUsageFlags::INDEX_BUFFER,
             ash::vk::MemoryPropertyFlags::DEVICE_LOCAL,
@@ -41,8 +41,12 @@ impl FrameRenderer {
             &mesh.vertices
         )?;
 
-        let sync_objects: SyncObjects = SyncObjects::new(&ctx.device, MAX_FRAMES_IN_FLIGHT as usize)?;
+        let sync_objects: SyncObjects = SyncObjects::new(
+            &ctx.device,
+            MAX_FRAMES_IN_FLIGHT as usize,
+            swapchain.images.len())?;
         let current_frame = 0;
+
 
         let command_buffers = CommandBuffers::new(
             &ctx.device,
@@ -229,6 +233,41 @@ impl FrameRenderer {
         Ok(())
     }
 
+
+    fn rodregues_rotation(axis: glm::Vec3, angle_rad: f32) -> glm::Mat4 {
+        let k = glm::normalize(axis);
+        let cos_t = angle_rad.cos();
+        let sin_t = angle_rad.sin();
+
+        let rotate_vec = |v: glm::Vec3| -> glm::Vec3 {
+            v * cos_t + (k * v) * sin_t + k * glm::dot(k, v) * (1.0 - cos_t)
+        };
+
+        let col0 = rotate_vec(glm::vec3(1.0, 0.0, 0.0));
+        let col1 = rotate_vec(glm::vec3(0.0, 1.0, 0.0));
+        let col2 = rotate_vec(glm::vec3(0.0, 0.0, 1.0));
+
+        glm::mat4(
+            col0.x, col1.x, col2.x, 0.0,
+            col0.y, col1.y, col2.y, 0.0,
+            col0.z, col1.z, col2.z, 0.0,
+            0.0,    0.0,    0.0,    1.0,
+        )
+    }
+
+    fn look_at_matrix(eye: glm::Vec3, center: glm::Vec3, up: glm::Vec3) -> glm::Mat4 {
+        let f = glm::normalize(center - eye);
+        let r = glm::normalize(glm::cross(f, up));
+        let u = glm::cross(r, f);
+
+        glm::Matrix4::new(
+            glm::vec4(r.x, u.x, -f.x, 0.0),
+            glm::vec4(r.y, u.y, -f.y, 0.0),
+            glm::vec4(r.z, u.z, -f.z, 0.0),
+            glm::vec4(-glm::dot(r, eye), -glm::dot(u, eye), glm::dot(f, eye), 1.0),
+        )
+    }
+
     fn update_uniform_buffer(&self, swapchain: &Swapchain) {
         let time: f32 = START_TIME.elapsed().as_secs_f32();
         let identity = glm::mat4(
@@ -239,8 +278,8 @@ impl FrameRenderer {
         );
 
         let mut ubo: UniformBufferObject = UniformBufferObject {
-            model: rotate(&identity, time * 90.0_f32.to_radians(), glm::vec3(0.0, 0.0, 1.0)),
-            view: look_at(glm::vec3(2.0, 2.0, 2.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 0.0,1.0)),
+            model: Self::rodregues_rotation(glm::vec3(0.5, 1.0, 0.0), time * 90.0_f32.to_radians()),
+            view: Self::look_at_matrix(glm::vec3(3.0, 3.0, 3.0), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 0.0,1.0)),
             proj: perspective(45_f32.to_radians(), (swapchain.config.extent.width as f32 / swapchain.config.extent.height as f32), 0.1, 10.0),
         };
 
@@ -251,25 +290,31 @@ impl FrameRenderer {
         }
     }
 
-    pub fn draw_frame(&mut self, ctx: &VulkanContext, swapchain: &Swapchain, pipeline: &Pipeline) -> Result<(), Box<dyn Error>> {
+    pub fn draw_frame(
+        &mut self,
+        ctx: &VulkanContext,
+        swapchain: &Swapchain,
+        pipeline: &Pipeline,
+    ) -> Result<(), Box<dyn Error>> {
         let current_fences = [self.sync_objects.inflight_fences[self.current_frame]];
         let current_wait_semaphores = [self.sync_objects.present_complete_semaphores[self.current_frame]];
-        let current_signal_semaphores = [self.sync_objects.render_finish_semaphores[self.current_frame]];
         let current_command_buffers = [self.command_buffers.buffers[self.current_frame]];
 
-        unsafe { ctx.device.wait_for_fences(
-            &current_fences,
-            true,
-            u64::MAX)?
-        };
+        // 1. Wait for CPU fence slot
+        unsafe {
+            ctx.device.wait_for_fences(&current_fences, true, u64::MAX)?;
+        }
 
-        let (image_index, acquire_result) = match unsafe { swapchain.loader.acquire_next_image(
-            swapchain.handle,
-            u64::MAX,
-            current_wait_semaphores[0],
-            ash::vk::Fence::null())
+        // 2. Acquire next swapchain image
+        let (image_index, _is_suboptimal) = match unsafe {
+            swapchain.loader.acquire_next_image(
+                swapchain.handle,
+                u64::MAX,
+                current_wait_semaphores[0],
+                ash::vk::Fence::null(),
+            )
         } {
-            Ok(result ) => result,
+            Ok(result) => result,
             Err(ash::vk::Result::ERROR_OUT_OF_DATE_KHR) => {
                 return Err(Box::new(ash::vk::Result::ERROR_OUT_OF_DATE_KHR));
             }
@@ -277,46 +322,52 @@ impl FrameRenderer {
         };
 
         unsafe { ctx.device.reset_fences(&current_fences)? };
-        unsafe { ctx.device.reset_command_buffer(current_command_buffers[0], ash::vk::CommandBufferResetFlags::RELEASE_RESOURCES)? };
+
+        // 3. Bind signal semaphore to the specific swapchain image index
+        let current_signal_semaphores = [self.sync_objects.render_finish_semaphores[image_index as usize]];
+
+        // 4. Update UBO data & record commands
+        self.update_uniform_buffer(swapchain);
+
         unsafe {
+            ctx.device.reset_command_buffer(
+                current_command_buffers[0],
+                ash::vk::CommandBufferResetFlags::RELEASE_RESOURCES,
+            )?;
             self.record_command_buffer(
                 &ctx.device,
                 &self.command_buffers.buffers[self.current_frame],
                 swapchain,
                 pipeline,
-                image_index as usize)?
-        };
+                image_index as usize,
+            )?;
+        }
 
-        self.update_uniform_buffer(swapchain);
-
-        // Image submission to queue
+        // 5. Submit command buffer via Vulkan 1.3 Synchronization2
         let wait_semaphore_info = ash::vk::SemaphoreSubmitInfo::default()
             .semaphore(current_wait_semaphores[0])
             .stage_mask(ash::vk::PipelineStageFlags2::COLOR_ATTACHMENT_OUTPUT);
 
         let signal_semaphore_info = ash::vk::SemaphoreSubmitInfo::default()
             .semaphore(current_signal_semaphores[0])
-            .stage_mask(ash::vk::PipelineStageFlags2::ALL_COMMANDS);
+            .stage_mask(ash::vk::PipelineStageFlags2::COLOR_ATTACHMENT_OUTPUT);
 
         let command_buffer_submit_info = ash::vk::CommandBufferSubmitInfo::default()
             .command_buffer(current_command_buffers[0]);
 
-        let wait_semaphore_infos = [wait_semaphore_info];
-        let command_buffer_submit_infos = [command_buffer_submit_info];
-        let signal_semaphore_infos = [signal_semaphore_info];
-
         let submit_info = ash::vk::SubmitInfo2::default()
-            .wait_semaphore_infos(&wait_semaphore_infos)
-            .command_buffer_infos(&command_buffer_submit_infos)
-            .signal_semaphore_infos(&signal_semaphore_infos);
+            .wait_semaphore_infos(std::slice::from_ref(&wait_semaphore_info))
+            .command_buffer_infos(std::slice::from_ref(&command_buffer_submit_info))
+            .signal_semaphore_infos(std::slice::from_ref(&signal_semaphore_info));
 
         self.command_buffers.submit(
             &ctx.device,
             &ctx.queues.graphics,
             submit_info,
-            current_fences[0])?;
+            current_fences[0],
+        )?;
 
-        // Image Present
+        // 6. Present image & check for out-of-date swapchain status
         let swapchains = [swapchain.handle];
         let image_indices = [image_index];
 
@@ -325,7 +376,15 @@ impl FrameRenderer {
             .swapchains(&swapchains)
             .image_indices(&image_indices);
 
-        unsafe { swapchain.loader.queue_present(ctx.queues.graphics, &present_info)? };
+        let present_result = unsafe { swapchain.loader.queue_present(ctx.queues.graphics, &present_info) };
+
+        match present_result {
+            Ok(true) | Err(ash::vk::Result::ERROR_OUT_OF_DATE_KHR) | Err(ash::vk::Result::SUBOPTIMAL_KHR) => {
+                return Err(Box::new(ash::vk::Result::ERROR_OUT_OF_DATE_KHR));
+            }
+            Err(e) => return Err(Box::new(e)),
+            _ => {}
+        }
 
         self.current_frame = (self.current_frame + 1) % MAX_FRAMES_IN_FLIGHT as usize;
 
