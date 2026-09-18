@@ -44,7 +44,6 @@ impl CommandBuffers {
     ) -> Result<(), Box<dyn Error>> {
         unsafe {
             device.queue_submit2(*queue, std::slice::from_ref(&submit_info), fence)?;
-            device.queue_wait_idle(*queue);
         }
         Ok(())
     }
